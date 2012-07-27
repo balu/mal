@@ -1,0 +1,4 @@
+- User defined substitutions
+	subst n = CHILLU_N;
+	...
+	ava{n}
