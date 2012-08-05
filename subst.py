@@ -76,6 +76,7 @@ VOWEL_SIGN_AU = unicodedata.lookup('MALAYALAM VOWEL SIGN AU')
 # signs
 SIGN_VIRAMA = unicodedata.lookup('MALAYALAM SIGN VIRAMA')
 SIGN_ANUSVARA = unicodedata.lookup('MALAYALAM SIGN ANUSVARA')
+SIGN_VISARGA = unicodedata.lookup('MALAYALAM SIGN VISARGA')
 
 # Define the patterns for substitution
 vowels = [
@@ -124,7 +125,7 @@ consonants = [
 
 # Extra Consonants
 for i in ("Y", "R", "RR", "L", "LL", "V", "SH", "SS", "S", "H"):
-	consonants.append(([i.lower(), "^" + i.lower()], unicodedata.lookup('MALAYALAM LETTER ' + i + 'A')))
+	consonants.append(([i.lower()], unicodedata.lookup('MALAYALAM LETTER ' + i + 'A')))
 consonants.append((["zh"], unicodedata.lookup('MALAYALAM LETTER LLLA')))
 
 # Add consonants followed by vowel sounds

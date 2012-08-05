@@ -1,4 +1,8 @@
 import unicodedata
+from optparse import OptionParser
+
+# The whole namespace is imported so that it will be available 
+# to the script imported in malayalam stream.
 from subst import *
 
 
@@ -28,9 +32,8 @@ def _post_process(uni):
 			new_uni = new_uni + SIGN_ANUSVARA
 			i = i + 2
 		elif i+2 < len(uni) and uni[i] == LETTER_NA and uni[i+1] == SIGN_VIRAMA and uni[i+2] == LETTER_TA:
-			# TODO: As per Unicode 5.1, the correct sequence is CHILLU_NA + SIGN+VIRAMA + LETTER_RRA
-			# However no font supports this sequence (as of Jul 2012)
-			new_uni = new_uni + LETTER_NA + SIGN_VIRAMA + LETTER_RRA
+			if options.oldnta: new_uni = new_uni + LETTER_NA + SIGN_VIRAMA + LETTER_RRA
+			else: new_uni = new_uni + CHILLU_N + SIGN_VIRAMA + LETTER_RRA
 			i = i + 3
 		else:
 			new_uni = new_uni + uni[i]
@@ -125,21 +128,31 @@ def convert(stream):
 	lines = u''
 	line = stream.readline()
 	while line != "":
-		i = 0
-		while i < len(line):
-			while i < len(line) and line[i].isspace(): i, lines = i+1,lines + line[i]
+		if line.startswith('import'):
+			f = line.split()[1] + ".py"
+			execfile(f)
+		else:
+			i = 0
+			while i < len(line):
+				while i < len(line) and line[i].isspace(): i, lines = i+1,lines + line[i]
 			
-			# Gather the next word (A string of non-whitespace characters)
-			w = ""
-			while i < len(line) and not line[i].isspace(): i, w = i+1, w + line[i]
-		
-			u = _convert(w)
-			lines = lines + u
+				# Gather the next word (A string of non-whitespace characters)
+				w = ""
+				while i < len(line) and not line[i].isspace(): i, w = i+1, w + line[i]
+
+				u = _convert(w)
+				lines = lines + u
 		line = stream.readline()
 	return lines
 
 
 if __name__ == "__main__":
 	import sys, codecs
+	global options
+	parser = OptionParser()
+	parser.add_option("--old-nta", action="store_true", dest="oldnta", default=False, 
+		help="Use old style code for the ligature /nta/. (Required to work with older fonts not supporting Unicode 5.1")
+	(options,args) = parser.parse_args()
+
 	f = codecs.open("/dev/stdout", "w", "utf_8")
 	f.write(convert(sys.stdin))
