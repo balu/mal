@@ -71,7 +71,7 @@ VOWEL_SIGN_E = unicodedata.lookup('MALAYALAM VOWEL SIGN E')
 VOWEL_SIGN_EE = unicodedata.lookup('MALAYALAM VOWEL SIGN EE')
 VOWEL_SIGN_O = unicodedata.lookup('MALAYALAM VOWEL SIGN O')
 VOWEL_SIGN_OO = unicodedata.lookup('MALAYALAM VOWEL SIGN OO')
-VOWEL_SIGN_AU = unicodedata.lookup('MALAYALAM VOWEL SIGN AU')
+VOWEL_SIGN_AU = unicodedata.lookup('MALAYALAM AU LENGTH MARK')
 
 # signs
 SIGN_VIRAMA = unicodedata.lookup('MALAYALAM SIGN VIRAMA')
@@ -134,8 +134,9 @@ consonant_vowel = []
 for vowel_sign in ("AA", "I", "II", "U", "UU", "E", "EE", "AI", "O", "OO"):
 	for c in consonants:
 		consonant_vowel.append(([i + vowel_sign.lower() for i in c[0]], c[1] + unicodedata.lookup('MALAYALAM VOWEL SIGN ' + vowel_sign)))
-		consonant_vowel.append(([i + "ow" for i in c[0]], c[1] + unicodedata.lookup('MALAYALAM AU LENGTH MARK')))
+
 for c in consonants:
+	consonant_vowel.append(([i + "ow" for i in c[0]], c[1] + unicodedata.lookup('MALAYALAM AU LENGTH MARK')))
 	consonant_vowel.append(([i + "a" for i in c[0]], c[1]))
 
 for i, c in enumerate(consonants):

@@ -18,7 +18,7 @@ def match(word, subst):
 
 # Post processing for handling certain special forms in malayalam
 # Handle anusvaram, vocalic R, /nta/
-# If /m/ is not followed by pa or ma, turn it into anusvara
+# If /m/ is not followed by pa or ma, turn it into anusvara, unless /m/ occurs at the beginning.
 # If a CONSONANT, VIRAMA, VOCALIC R sequence occurs, turn into sign for VOCALIC R
 def _post_process(uni):
 	new_uni = u''
@@ -27,7 +27,7 @@ def _post_process(uni):
 		if uni[i+1] == SIGN_VIRAMA and i+2 < len(uni) and uni[i+2] == LETTER_VOCALIC_R:
 			new_uni = new_uni + uni[i] + VOWEL_SIGN_VOCALIC_R
 			i = i + 3
-		elif uni[i] == LETTER_MA and uni[i+1] == SIGN_VIRAMA and \
+		elif i > 0 and uni[i] == LETTER_MA and uni[i+1] == SIGN_VIRAMA and \
 		(i+2 >= len(uni) or uni[i+2] != LETTER_PA and uni[i+2] != LETTER_MA):
 			new_uni = new_uni + SIGN_ANUSVARA
 			i = i + 2
@@ -134,6 +134,7 @@ def convert(stream):
 		else:
 			i = 0
 			while i < len(line):
+				# Catch all the whitespace chars here
 				while i < len(line) and line[i].isspace(): i, lines = i+1,lines + line[i]
 			
 				# Gather the next word (A string of non-whitespace characters)
