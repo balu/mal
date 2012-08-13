@@ -1,5 +1,3 @@
-import defs
-
 harishrii ganhapathaye nama{h}
 avighnamasthu
 
@@ -9,16 +7,16 @@ guru shukra shanibhyashcha
 raahavee keethavee nama{h}
 
 shaanthaakaaram bhujagashayanam pathmanaabham sureesham
-vishvaakaaram gaganasadhrhsham meeghava{rr}nhnham shubhaamgam
+vishvaakaaram gaganasadhrhsham meeghava(r)nhnham shubhaamgam
 lakssmiikaantham kamalanayanam yoogihrhdhyaana(ga)myam
-vandhee vissnhum bhavabhayaharam sa{rr}valookaikanaattham
+vandhee vissnhum bhavabhayaharam sa(r)valookaikanaattham
 
 meeghashyaamam piithakowsheeyavaasam
 shriivathsaamgam kowsthubhothbhaasithaamgam
 punhyoopeetham punhdariikaayathaakssam
-vissnhum vandhee sa{rr}valookaikanaattham
+vissnhum vandhee sa(r)valookaikanaattham
 
 sashamghachakram sakiriitakunhdalam
 sapiithavasthram sarasiiruheekssanham
 sahaaravakssastthalashoobhikowsthubham
-namaami vissnhum shiras(saa) chathu{rr}bhujam
+namaami vissnhum shiras(saa) chathu(r)bhujam

@@ -77,6 +77,7 @@ VOWEL_SIGN_AU = unicodedata.lookup('MALAYALAM AU LENGTH MARK')
 SIGN_VIRAMA = unicodedata.lookup('MALAYALAM SIGN VIRAMA')
 SIGN_ANUSVARA = unicodedata.lookup('MALAYALAM SIGN ANUSVARA')
 SIGN_VISARGA = unicodedata.lookup('MALAYALAM SIGN VISARGA')
+SIGN_AVAGRAHA = unicodedata.lookup('MALAYALAM SIGN AVAGRAHA')
 
 # Define the patterns for substitution
 vowels = [
@@ -147,11 +148,8 @@ subst = vowels + consonants + consonant_vowel
 
 # internally defined substitutions
 mdict = {
-"n": CHILLU_N,
-"nn": CHILLU_NN,
-"l": CHILLU_L,
-"ll": CHILLU_LL,
-"rr": CHILLU_RR,
+"v": SIGN_AVAGRAHA,
+"h": SIGN_VISARGA
 }
 
 if __name__ == "__main__":

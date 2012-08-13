@@ -1,151 +1,160 @@
 import unicodedata
 from optparse import OptionParser
 
-# The whole namespace is imported so that it will be available 
-# to the script imported in malayalam stream.
 from subst import *
+import copy, re
 
+class Parser:
 
-def match(word, subst):
-	"""Match the prefix of the word with subst. Return all matched substitutions"""
-	matches = []
-	for s in subst:
-		m = filter(lambda x: word.startswith(x), s[0])
-		if m:
-			matches.append((s, m[0]))
-	return matches
+	WHITESPACE 	= 0
+	SWORD		= 1
+	GWORD		= 2
+	MWORD		= 3
+	ECHAR		= 4
 
+	tokens = [
+		 [re.compile("\s+"), 		WHITESPACE],
+		 [re.compile("[a-z]+"), 	SWORD],
+		 [re.compile("\([a-z]+\)"), 	GWORD],
+		 [re.compile("\{.+\}"), 	MWORD],
+		 [re.compile("\\."), 		ECHAR]
+	]
 
-# Post processing for handling certain special forms in malayalam
-# Handle anusvaram, vocalic R, /nta/
-# If /m/ is not followed by pa or ma, turn it into anusvara, unless /m/ occurs at the beginning.
-# If a CONSONANT, VIRAMA, VOCALIC R sequence occurs, turn into sign for VOCALIC R
-def _post_process(uni):
-	new_uni = u''
-	i = 0
-	while i <= len(uni) - 2:
-		if uni[i+1] == SIGN_VIRAMA and i+2 < len(uni) and uni[i+2] == LETTER_VOCALIC_R:
-			new_uni = new_uni + uni[i] + VOWEL_SIGN_VOCALIC_R
-			i = i + 3
-		elif i > 0 and uni[i] == LETTER_MA and uni[i+1] == SIGN_VIRAMA and \
-		(i+2 >= len(uni) or uni[i+2] != LETTER_PA and uni[i+2] != LETTER_MA):
-			new_uni = new_uni + SIGN_ANUSVARA
-			i = i + 2
-		elif i+2 < len(uni) and uni[i] == LETTER_NA and uni[i+1] == SIGN_VIRAMA and uni[i+2] == LETTER_TA:
-			if options.oldnta: new_uni = new_uni + LETTER_NA + SIGN_VIRAMA + LETTER_RRA
-			else: new_uni = new_uni + CHILLU_N + SIGN_VIRAMA + LETTER_RRA
-			i = i + 3
-		else:
-			new_uni = new_uni + uni[i]
-			i = i + 1
-	new_uni = new_uni + uni[i:]
-	return new_uni
-
-
-# convert a word containing only letters into unicode codepoints for malayalam.
-def __convert(word):
-	uni = u''
-	word = word.lower().strip()
-	while word:
-		m = match(word, subst)
-		if m:
-			m = reduce(lambda x, y: len(x[1]) >= len(y[1]) and x or y, m) # Pick the longest match
-			uni = uni + m[0][1]
-			word = word[len(m[1]):]
-		else:
-			return u'' # Failed to convert the word.
-	return _post_process(uni)
-
-def _group_until_match(word, char, match_char):
-	w = char
-	c = 0
-	i = 1
-	while i < len(word) and (c > 0 or word[i] != match_char):
-		if word[i] == char: c = c + 1
-		elif word[i] == match_char: c = c - 1
-		w, i = w + word[i], i + 1
-	if c > 0 or i >= len(word):
-		word = w = ""
-	else:
-		w = w + word[i]
-		word = word[i+1:]
-	return (w, word)
-
-def _split_to_groups(word):
-	w = ""
-	if word == "": return []
-
-	if word[0] == '(':
-		(w, word) = _group_until_match(word, '(', ')')
-	elif word[0] == '{':
-		(w, word) = _group_until_match(word, '{', '}')
-	elif word[0] == '\\':
-		w = word[0:2]
-		word = word[2:]
-	elif word.isalpha():
-		return [word]
-	elif not word[0].isalpha():
-		w, word = word[0], word[1:]
-	else:
-		i = 0
-		while i < len(word) and word[i].isalpha():
-			w, i = w + word[i], i+1
-		word = word[i:]
-	# Invariant: w - the first member of the group, word - the rest of the word after removing group w
-	return [w] + _split_to_groups(word)
-
-def _process_macro(m):
-	mbody = m[1:-1]
-	if mbody in mdict.keys():
-		return mdict[m[1:-1]]
-	return u''
-
-def _process_group(g):
-	gbody = g[1:-1]
-	return _convert(gbody)
 		
-# Convert a word (possibly containing substs) into unicode malayalam.
-def _convert(word):
-	uni = u''
-	word = word.lower().strip()
-	wg = _split_to_groups(word)
-	for w in wg:
-		if w[0] == '(':
-			u = _process_group(w)
-		elif w[0] == '{':
-			u = _process_macro(w)
-		elif w[0] == '\\':
-			u = w[1]
-		elif w.isalpha():
-			u = __convert(w)
-		else:
-			u = w
-		uni = uni + u
-	return uni
 
+	def __init__(self):
+		self.subst = copy.deepcopy(subst)
+		self.mdict = copy.deepcopy(mdict)
 
-def convert(stream):
-	lines = u''
-	line = stream.readline()
-	while line != "":
-		if line.startswith('import'):
-			f = line.split()[1] + ".py"
-			execfile(f)
-		else:
-			i = 0
-			while i < len(line):
-				# Catch all the whitespace chars here
-				while i < len(line) and line[i].isspace(): i, lines = i+1,lines + line[i]
+	def _match(self, word):
+		matches = []
+		for s in self.subst:
+			m = filter(lambda x: word.startswith(x), s[0])
+			if m:
+				matches.append((s, m[0]))
+		return matches
+
+	def _is_chillu_form(self, uni):
+		return uni[0] == LETTER_NA or uni[0] == LETTER_RA or \
+			uni[0] == LETTER_NHA or uni[0] == LETTER_LA or uni[0] == LETTER_LLA
+
+	def _chillu_form(self, uni):
+		chillus = { \
+				LETTER_NA : CHILLU_N,\
+				LETTER_NHA : CHILLU_NN,\
+				LETTER_LA : CHILLU_L,\
+				LETTER_LLA : CHILLU_LL,\
+				LETTER_RA : CHILLU_RR}
+		if chillus[uni]: return chillus[uni]
+		return u''
 			
-				# Gather the next word (A string of non-whitespace characters)
-				w = ""
-				while i < len(line) and not line[i].isspace(): i, w = i+1, w + line[i]
+			
 
-				u = _convert(w)
-				lines = lines + u
-		line = stream.readline()
-	return lines
+	# Post processing for handling certain special forms in malayalam
+	# Handle anusvaram, vocalic R, /nta/
+	# If /m/ is not followed by pa or ma, turn it into anusvara, unless /m/ occurs at the beginning.
+	# If a CONSONANT, VIRAMA, VOCALIC R sequence occurs, turn into sign for VOCALIC R
+	# Chillu letters
+	def _post_process(self, uni):
+		global options
+		new_uni = u''
+		i = 0
+		while i <= len(uni) - 2:
+			if i == len(uni) - 2 and self._is_chillu_form(uni[i]) and uni[i+1] == SIGN_VIRAMA:
+				new_uni = new_uni + self._chillu_form(uni[i])
+				i = i + 2
+			elif uni[i+1] == SIGN_VIRAMA and i+2 < len(uni) and uni[i+2] == LETTER_VOCALIC_R:
+				new_uni = new_uni + uni[i] + VOWEL_SIGN_VOCALIC_R
+				i = i + 3
+			elif i > 0 and uni[i] == LETTER_MA and uni[i+1] == SIGN_VIRAMA and \
+			(i+2 >= len(uni) or uni[i+2] != LETTER_PA and uni[i+2] != LETTER_MA):
+				new_uni = new_uni + SIGN_ANUSVARA
+				i = i + 2
+			elif i+2 < len(uni) and uni[i] == LETTER_NA and uni[i+1] == SIGN_VIRAMA and uni[i+2] == LETTER_TA:
+				if options.oldnta: new_uni = new_uni + LETTER_NA + SIGN_VIRAMA + LETTER_RRA
+				else: new_uni = new_uni + CHILLU_N + SIGN_VIRAMA + LETTER_RRA
+				i = i + 3
+			else:
+				new_uni = new_uni + uni[i]
+				i = i + 1
+		new_uni = new_uni + uni[i:]
+		return new_uni
 
+
+	# convert a word containing only letters into unicode codepoints for malayalam.
+	def __convert(self, word):
+		uni = u''
+		while word:
+			m = self._match(word)
+			if m:
+				m = reduce(lambda x, y: len(x[1]) >= len(y[1]) and x or y, m) # Pick the longest match
+				uni = uni + m[0][1]
+				word = word[len(m[1]):]
+			else:
+				uni = uni + word[0] # No matches found skip one character
+				word = word[1:]
+		return self._post_process(uni)
+
+	def _process_group(self, m):
+		gbody = m[1:-1]
+		return self.__convert(gbody)
+
+	def _process_macro(self, m):
+		mbody = m[1:-1]
+		if mbody in self.mdict.keys():
+			return self.mdict[m[1:-1]]
+		return m
+
+	def _get_token(self, text):
+		for pat, t in Parser.tokens:
+			m = re.match(pat, text)
+			if m:
+				return (t, m.group())
+		return (OTHER_CHAR, text[0])
+		
+
+	def convert(self, text):
+		"""Use for lines to be converted (Not to be used for import lines)"""
+		out = u''
+		while text != "":
+			(ty, te) = self._get_token(text)
+			if ty == Parser.WHITESPACE:
+				out = out + te
+			elif ty == Parser.SWORD:
+				out = out + self.__convert(te)
+			elif ty == Parser.GWORD:
+				out = out + self._process_group(te)
+			elif ty == Parser.MWORD:
+				out = out + self._process_macro(te)
+			elif ty == Parser.ECHAR:
+				out = out + te[1]
+			else:
+				out = out + te[0]
+			text = text[len(te):]
+		return out
+
+	def source(self, line):
+		"""Use for a line of text"""
+		if line.startswith("import"):
+			fname = line.split()[1] + '.py'
+			execfile(fname)
+		else:
+			return self.convert(line)
+
+	def stream(self, istream, ostream):
+		"""Use to copy from one stream to another"""
+		line = istream.readline()
+		while line != "":
+			ostream.write(self.source(line))
+			line = istream.readline()
+
+	def text(self, text):
+		"""Use for a chunk of text"""
+		out = u''
+		lines = text.splitlines()
+		for line in lines:
+			u = u + self.source(line) + '\n'
+		return u
 
 if __name__ == "__main__":
 	import sys, codecs
@@ -155,5 +164,9 @@ if __name__ == "__main__":
 		help="Use old style code for the ligature /nta/. (Required to work with older fonts not supporting Unicode 5.1")
 	(options,args) = parser.parse_args()
 
-	f = codecs.open("/dev/stdout", "w", "utf_8")
-	f.write(convert(sys.stdin))
+	p = Parser()
+
+	with open("/dev/stdin", "r") as infile:
+		with codecs.open("/dev/stdout", "w", "utf_8") as outfile:
+			p.stream(infile, outfile)
+
