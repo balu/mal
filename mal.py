@@ -11,13 +11,16 @@ class Parser:
 	GWORD		= 2
 	MWORD		= 3
 	ECHAR		= 4
+	LWORD		= 5
+	OTHER_CHAR	= 6
 
 	tokens = [
-		 [re.compile("\s+"), 		WHITESPACE],
-		 [re.compile("[a-z]+"), 	SWORD],
-		 [re.compile("\([a-z]+\)"), 	GWORD],
-		 [re.compile("\{.+\}"), 	MWORD],
-		 [re.compile("\\."), 		ECHAR]
+		 [re.compile("\\\s+"), 		WHITESPACE],
+		 [re.compile("[a-zA-Z]+"), 	SWORD],
+		 [re.compile("\\([a-zA-Z]+\)"),	GWORD],
+		 [re.compile("\\{.+\}"), 	MWORD],
+		 [re.compile("\\\\."), 		ECHAR],
+		 [re.compile("\\[.*\\]"),	LWORD]
 	]
 
 		
@@ -83,6 +86,7 @@ class Parser:
 
 	# convert a word containing only letters into unicode codepoints for malayalam.
 	def __convert(self, word):
+		word = word.lower()
 		uni = u''
 		while word:
 			m = self._match(word)
@@ -105,12 +109,15 @@ class Parser:
 			return self.mdict[m[1:-1]]
 		return m
 
+	def _process_literal(self, m):
+		return m[1:-1]
+
 	def _get_token(self, text):
 		for pat, t in Parser.tokens:
 			m = re.match(pat, text)
 			if m:
 				return (t, m.group())
-		return (OTHER_CHAR, text[0])
+		return (Parser.OTHER_CHAR, text[0])
 		
 
 	def convert(self, text):
@@ -128,6 +135,8 @@ class Parser:
 				out = out + self._process_macro(te)
 			elif ty == Parser.ECHAR:
 				out = out + te[1]
+			elif ty == Parser.LWORD:
+				out = out + self._process_literal(te)
 			else:
 				out = out + te[0]
 			text = text[len(te):]
@@ -138,6 +147,7 @@ class Parser:
 		if line.startswith("import"):
 			fname = line.split()[1] + '.py'
 			execfile(fname)
+			return u''
 		else:
 			return self.convert(line)
 

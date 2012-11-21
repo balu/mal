@@ -1,3 +1,5 @@
+import samples/defs
+
 harishrii ganhapathaye nama{h}
 avighnamasthu
 
@@ -20,3 +22,5 @@ sashamghachakram sakiriitakunhdalam
 sapiithavasthram sarasiiruheekssanham
 sahaaravakssastthalashoobhikowsthubham
 namaami vissnhum shiras(saa) chathu(r)bhujam
+
+-- {name}
